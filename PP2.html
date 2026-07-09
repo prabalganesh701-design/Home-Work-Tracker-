@@ -1,0 +1,900 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework Tracker - IQRA International School</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* CSS Variables - True Pitch Black Dark Mode Default */
+        :root {
+            --bg-color: #000000;
+            --panel-bg: rgba(18, 18, 18, 0.95);
+            --panel-border: #282828;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --text-main: #f8fafc;
+            --text-muted: #a3a3a3;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --low: #84cc16;
+            --purple-note: #8b5cf6;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --item-bg: rgba(255, 255, 255, 0.03);
+            --item-hover: rgba(255, 255, 255, 0.08);
+            --wm-opacity: 0.06;
+        }
+
+        body.light-mode {
+            --bg-color: #f1f5f9;
+            --panel-bg: rgba(255, 255, 255, 0.95);
+            --panel-border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --input-bg: #f8fafc;
+            --item-bg: #f8fafc;
+            --item-hover: #f1f5f9;
+            --wm-opacity: 0.08;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* --- Realistic Background Wallpaper Layer --- */
+        .bg-watermark-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: var(--wm-opacity);
+            user-select: none;
+        }
+        .wm { position: absolute; color: var(--text-main); font-weight: 800; }
+        .wm-icon { font-size: 5rem; }
+        .wm-text { font-size: 1.4rem; letter-spacing: 2px; text-transform: uppercase; }
+        .wm-huge-num { font-size: 18rem; font-weight: 900; color: #fbbf24; line-height: 1; }
+        
+        /* Athlete Background Visual Elements */
+        .wm-img {
+            position: absolute;
+            width: 320px;
+            height: 320px;
+            object-fit: cover;
+            border-radius: 20px;
+            filter: grayscale(100%) contrast(130%);
+        }
+
+        /* --- Global Fixed Bottom Right Signature --- */
+        .fixed-corner-tag {
+            position: fixed;
+            bottom: 15px;
+            right: 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #fbbf24;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid var(--panel-border);
+            padding: 5px 12px;
+            border-radius: 6px;
+            pointer-events: none;
+        }
+
+        /* --- Page Internal Ownership Stamp --- */
+        .view-signature-stamp {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        /* --- Header --- */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 0 20px; z-index: 10; }
+        .logo-section { display: flex; align-items: center; gap: 15px; }
+        .logo-image { width: 70px; height: auto; object-fit: contain; }
+        .school-info h1 { font-size: 1.2rem; color: #fbbf24; }
+        .school-info p { font-size: 0.8rem; color: var(--text-muted); }
+        .title-section { text-align: center; }
+        .title-section h2.main-title { font-size: 2rem; font-family: serif; }
+        .title-section p { color: var(--text-muted); font-size: 0.9rem; }
+        .header-actions { display: flex; gap: 15px; }
+        
+        .btn-icon {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- Main Layout --- */
+        .main-container { display: flex; gap: 20px; flex: 1; z-index: 10; }
+
+        /* --- Sidebar & Aligned Quotes --- */
+        .sidebar { width: 260px; display: flex; flex-direction: column; gap: 20px; }
+        .nav-menu { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 15px; padding: 15px 0; backdrop-filter: blur(8px); }
+        
+        .nav-item {
+            padding: 12px 25px; display: flex; align-items: center; gap: 15px;
+            color: var(--text-muted); text-decoration: none; cursor: pointer;
+            border: none; background: none; width: 100%; text-align: left; font-size: 1rem;
+        }
+        .nav-item:hover { background: var(--item-hover); color: var(--text-main); }
+        .nav-item.active { background: var(--primary); color: white; border-radius: 8px; margin: 0 10px; padding: 12px 15px; width: calc(100% - 20px); }
+
+        /* Quotes Alignment Engine */
+        .sidebar-quotes { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .quote-box { 
+            background: var(--panel-bg); 
+            border-left: 3px solid #fbbf24; 
+            padding: 12px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            color: var(--text-muted); 
+            line-height: 1.4; 
+            backdrop-filter: blur(8px);
+            border-top: 1px solid var(--panel-border);
+            border-right: 1px solid var(--panel-border);
+            border-bottom: 1px solid var(--panel-border);
+        }
+        .quote-author { display: block; margin-top: 6px; color: #fbbf24; text-align: right; font-weight: bold; font-size: 0.75rem; }
+
+        /* --- Content Area --- */
+        .content { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        .view-section { display: none; flex-direction: column; gap: 20px; }
+        .view-section.active-view { display: flex; }
+
+        .placeholder-page { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 15px; padding: 40px; flex: 1; backdrop-filter: blur(8px); }
+        .placeholder-page i.page-icon { font-size: 3rem; color: var(--primary); margin-bottom: 15px; text-align: center; display: block; }
+        .placeholder-page h2 { text-align: center; margin-bottom: 20px;}
+
+        /* Stats Row */
+        .stats-container { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 15px; padding: 20px; backdrop-filter: blur(8px); }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { display: flex; align-items: center; gap: 15px; border-right: 1px solid var(--panel-border); }
+        .stat-card:last-child { border-right: none; }
+        
+        .stat-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .icon-blue { background: rgba(37, 99, 235, 0.2); color: #3b82f6; }
+        .icon-green { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .icon-yellow { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .icon-purple { background: rgba(139, 92, 246, 0.2); color: #a855f7; }
+
+        .stat-info p { font-size: 0.8rem; color: var(--text-muted); }
+        .stat-info h3 { font-size: 1.5rem; }
+
+        .progress-section { display: flex; align-items: center; gap: 15px; font-size: 0.9rem; }
+        .progress-bar-bg { flex: 1; height: 8px; background: var(--item-bg); border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { width: 0%; height: 100%; background: var(--success); border-radius: 4px; transition: width 0.5s ease; }
+
+        /* Bottom Grid Columns */
+        .bottom-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+        .panel { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 15px; padding: 20px; backdrop-filter: blur(8px); }
+        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--panel-border); padding-bottom: 15px; }
+        .panel-header h3 { font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+
+        /* Form Layout Options */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-muted); }
+        .form-control { width: 100%; background: var(--input-bg); border: 1px solid var(--panel-border); color: var(--text-main); padding: 10px 15px; border-radius: 8px; outline: none; }
+        .form-control:focus { border-color: var(--primary); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        .btn-primary { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        /* Task Items Elements */
+        .list-controls { display: flex; justify-content: space-between; align-items: center; }
+        .tabs { display: flex; background: var(--input-bg); border-radius: 8px; padding: 4px; }
+        .tab { padding: 6px 15px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: var(--text-muted); }
+        .tab.active { background: var(--primary); color: white; }
+
+        .search-box { position: relative; }
+        .search-box input { background: var(--input-bg); border: 1px solid var(--panel-border); color: var(--text-main); padding: 8px 15px 8px 35px; border-radius: 20px; font-size: 0.85rem; }
+        .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.8rem; }
+
+        .task-list { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; }
+        .task-item { display: flex; align-items: center; padding: 12px 15px; background: var(--item-bg); border: 1px solid var(--panel-border); border-radius: 8px; }
+        .task-item.completed-task { opacity: 0.6; }
+        .task-item.completed-task .task-title { text-decoration: line-through; }
+
+        .task-checkbox { margin-right: 15px; width: 18px; height: 18px; cursor: pointer; accent-color: var(--success); }
+        .task-info { flex: 2; }
+        .task-title { font-weight: 500; font-size: 0.95rem; }
+        .task-subject { font-size: 0.8rem; color: var(--text-muted); }
+        .task-date { flex: 1; font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; width: 70px; text-align: center; }
+        .badge.High { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+        .badge.Medium { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); }
+        .badge.Low { background: rgba(132, 204, 22, 0.2); color: var(--low); border: 1px solid var(--low); }
+
+        .task-actions { display: flex; gap: 8px; margin-left: 20px; }
+        .action-btn { background: var(--input-bg); border: 1px solid var(--panel-border); color: var(--text-muted); width: 30px; height: 30px; border-radius: 6px; cursor: pointer; }
+        .action-btn.delete:hover { color: var(--danger); border-color: var(--danger); }
+
+        /* Custom Speed Progress Timer Display */
+        .timer-layout { display: flex; flex-direction: column; align-items: center; gap: 20px; max-width: 500px; margin: 0 auto; }
+        .timer-display-digits { font-size: 4.5rem; font-family: monospace; font-weight: bold; color: #fbbf24; letter-spacing: 2px; text-shadow: 0 0 10px rgba(251, 191, 36, 0.2); }
+        .timer-controls { display: flex; gap: 15px; width: 100%; justify-content: center; }
+        .btn-timer { flex: 1; max-width: 120px; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-timer.start { background: var(--success); }
+        .btn-timer.pause { background: var(--warning); }
+        .btn-timer.reset { background: var(--danger); }
+
+        /* Calendar Layout */
+        .calendar-view-split { display: grid; grid-template-columns: 3fr 1fr; gap: 20px; width: 100%; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 15px;}
+        .cal-day-header { text-align: center; font-weight: bold; color: var(--text-muted); font-size: 0.9rem; padding-bottom: 5px;}
+        .cal-day { background: var(--input-bg); border: 1px solid var(--panel-border); border-radius: 8px; min-height: 95px; height: auto; padding: 6px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+        .cal-day.active { background: rgba(37, 99, 235, 0.2); border-color: var(--primary); font-weight: bold; }
+        .cal-event { color: white; font-size: 0.7rem; padding: 3px 6px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cal-event.custom-note-badge { background: var(--purple-note); border-left: 3px solid #d8b4fe; }
+        
+        .stat-bar-group { margin-bottom: 20px; }
+        .stat-bar-group p { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;}
+
+        footer { text-align: center; margin-top: 40px; font-size: 32px; font-weight: bold; color: var(--text-main); z-index: 10; letter-spacing: 1px; line-height: 1.4; }
+        footer span { display: block; font-size: 1rem; color: var(--text-muted); font-weight: normal; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-watermark-layer">
+        <img class="wm-img" src="https://images.unsplash.com/photo-1518063319789-7217e6706b04?q=80&w=400&auto=format&fit=crop" style="top: 10%; left: 5%;" alt="Ronaldo">
+        <img class="wm-img" src="https://images.unsplash.com/photo-1511886929837-354d827aae26?q=80&w=400&auto=format&fit=crop" style="bottom: 15%; right: 8%;" alt="Messi">
+        <img class="wm-img" src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=400&auto=format&fit=crop" style="top: 45%; right: 40%;" alt="Kobe Bryant">
+
+        <div class="wm wm-huge-num" style="top: 5%; left: 45%;">6</div>
+        <div class="wm wm-huge-num" style="bottom: 8%; left: 35%;">7</div>
+
+        <div class="wm wm-icon" style="top: 18%; right: 22%;"><i class="fa-solid fa-gamepad"></i></div> 
+        <div class="wm wm-icon" style="bottom: 14%; left: 28%;"><i class="fa-solid fa-soccer-ball"></i></div> 
+        <div class="wm wm-icon" style="top: 42%; left: 2%;"><i class="fa-solid fa-desktop"></i></div> 
+        <div class="wm wm-icon" style="bottom: 38%; right: 3%;"><i class="fa-solid fa-book-open"></i></div> 
+        
+        <div class="wm wm-icon" style="top: 48%; left: 75%;"><i class="fa-solid fa-flask"></i></div> 
+        <div class="wm wm-icon" style="top: 2%; left: 78%;"><i class="fa-solid fa-atom"></i></div> 
+        <div class="wm-text wm" style="top: 26%; left: 24%;">E = mc²</div>
+        <div class="wm-text wm" style="bottom: 28%; right: 18%;">F = ma</div>
+
+        <div class="wm-text wm" style="top: 4%; left: 22%; color: #fbbf24;">VIRAT KOHLI (VK18)</div>
+        <div class="wm-text wm" style="top: 12%; left: 55%; color: #ef4444;">RCB</div>
+        <div class="wm-text wm" style="bottom: 20%; left: 15%; color: #ffffff;">REAL MADRID</div>
+        <div class="wm-text wm" style="top: 32%; right: 5%; color: #9333ea;">FC BARCELONA</div>
+        <div class="wm-text wm" style="bottom: 45%; right: 30%;">ATHLETES PRO</div>
+    </div>
+
+    <div class="fixed-corner-tag">-Prabal, 9B</div>
+
+    <header>
+        <div class="logo-section">
+            <img src="image_8f857f.png" alt="IQRA Logo" class="logo-image">
+            <div class="school-info">
+                <h1>IQRA International School</h1>
+                <p>Nurturing Minds, Building Futures</p>
+            </div>
+        </div>
+        <div class="title-section">
+            <h2 class="main-title">✨ Homework Tracker ✨</h2>
+            <p>Stay Organized, Stay Ahead!</p>
+        </div>
+        <div class="header-actions">
+            <button id="theme-toggle" class="btn-icon"><i class="fa-solid fa-sun"></i> Light Mode</button>
+            <button class="btn-icon"><i class="fa-solid fa-user-graduate"></i></button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        
+        <aside class="sidebar">
+            <nav class="nav-menu">
+                <button onclick="switchView('dashboard-view', this)" class="nav-item active"><i class="fa-solid fa-house"></i> Dashboard</button>
+                <button onclick="switchView('homework-view', this)" class="nav-item"><i class="fa-solid fa-list-check"></i> All Homework</button>
+                <button onclick="switchView('calendar-view', this)" class="nav-item"><i class="fa-regular fa-calendar-days"></i> Calendar</button>
+                <button onclick="switchView('stats-view', this)" class="nav-item"><i class="fa-solid fa-chart-simple"></i> Statistics</button>
+                <button onclick="switchView('timer-view', this)" class="nav-item"><i class="fa-solid fa-stopwatch"></i> Progress Timer</button>
+                <button onclick="switchView('settings-view', this)" class="nav-item"><i class="fa-solid fa-gear"></i> Settings</button>
+                <button onclick="switchView('about-view', this)" class="nav-item"><i class="fa-solid fa-circle-info"></i> About</button>
+            </nav>
+            
+            <div class="sidebar-quotes">
+                <div class="quote-box">
+                    "The present is the best gift that we have in our life... Past is past, it's never coming again."
+                    <span class="quote-author">- Cristiano Ronaldo</span>
+                </div>
+                <div class="quote-box">
+                    "You have to fight to reach your dream. You have to sacrifice and work hard for it."
+                    <span class="quote-author">- Lionel Messi</span>
+                </div>
+                <div class="quote-box">
+                    "Everything negative - pressure, challenges - is all an opportunity for me to rise."
+                    <span class="quote-author">- Kobe Bryant</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content">
+            
+            <div id="dashboard-view" class="view-section active-view">
+                <div class="view-signature-stamp">Created By Prabal</div>
+                <div class="stats-container">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-blue"><i class="fa-solid fa-clipboard-list"></i></div>
+                            <div class="stat-info"><p>Total Homework</p><h3 id="stat-total">0</h3></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-green"><i class="fa-solid fa-check"></i></div>
+                            <div class="stat-info"><p>Completed</p><h3 id="stat-completed">0</h3></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-yellow"><i class="fa-regular fa-clock"></i></div>
+                            <div class="stat-info"><p>Pending</p><h3 id="stat-pending">0</h3></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-purple"><i class="fa-regular fa-calendar-xmark"></i></div>
+                            <div class="stat-info"><p>Due Today</p><h3 id="stat-today">0</h3></div>
+                        </div>
+                    </div>
+                    <div class="progress-section">
+                        <span>Overall Progress</span>
+                        <div class="progress-bar-bg"><div id="stat-progress-bar" class="progress-bar-fill"></div></div>
+                        <span id="stat-progress-text">0%</span>
+                    </div>
+                </div>
+
+                <div class="bottom-grid">
+                    <div class="panel">
+                        <div class="panel-header"><h3><i class="fa-solid fa-file-circle-plus"></i> Add New Homework</h3></div>
+                        <form id="add-homework-form">
+                            <div class="form-group">
+                                <label>Title</label>
+                                <input type="text" id="input-title" class="form-control" placeholder="Enter homework title" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Subject</label>
+                                <input type="text" id="input-subject" class="form-control" placeholder="e.g., Physics, Chemistry, Computer" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label>Due Date</label><input type="date" id="input-date" class="form-control" required></div>
+                                <div class="form-group">
+                                    <label>Priority</label>
+                                    <select id="input-priority" class="form-control">
+                                        <option value="High">High</option>
+                                        <option value="Medium" selected>Medium</option>
+                                        <option value="Low">Low</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary"><i class="fa-solid fa-plus"></i> Add Homework</button>
+                        </form>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header list-controls">
+                            <h3><i class="fa-solid fa-book-open"></i> Homework List</h3>
+                            <div class="search-box">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="search-input" placeholder="Search homework...">
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <div class="tabs" style="display: inline-flex;">
+                                <div class="tab active" onclick="setFilter('All', this)">All</div>
+                                <div class="tab" onclick="setFilter('Pending', this)">Pending</div>
+                                <div class="tab" onclick="setFilter('Completed', this)" style="color: var(--success);">Completed</div>
+                            </div>
+                        </div>
+                        <div id="task-list-container" class="task-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="homework-view" class="view-section placeholder-page">
+                <div class="view-signature-stamp">Created By Prabal</div>
+                <i class="page-icon fa-solid fa-list-check"></i>
+                <h2>Master Archive</h2>
+                <p style="color: var(--text-muted); margin-bottom: 20px; text-align: center;">A complete log of every assignment you have logged in the system.</p>
+                <div id="archive-list-container" class="task-list"></div>
+            </div>
+
+            <div id="calendar-view" class="view-section placeholder-page" style="text-align: left;">
+                <div class="view-signature-stamp">Created By Prabal</div>
+                <div class="calendar-view-split">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                            <h2><i class="fa-regular fa-calendar-days" style="color: var(--primary);"></i> Timeline Calendar</h2>
+                            <div style="display: flex; gap: 10px;">
+                                <select id="cal-month-select" class="form-control" style="width: 140px; padding: 5px 10px; cursor: pointer;"></select>
+                                <select id="cal-year-select" class="form-control" style="width: 100px; padding: 5px 10px; cursor: pointer;"></select>
+                            </div>
+                        </div>
+                        <div id="calendar-grid-container" class="calendar-grid"></div>
+                    </div>
+
+                    <div style="border-left: 1px solid var(--panel-border); padding-left: 20px;">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; color: var(--purple-note);">
+                            <i class="fa-solid fa-pen-to-square"></i> Calendar Notes
+                        </h3>
+                        <form id="add-event-form" style="display: flex; flex-direction: column; gap: 12px;">
+                            <div>
+                                <label style="font-size: 0.8rem; color: var(--text-muted); display:block; margin-bottom:4px;">Event / Note</label>
+                                <input type="text" id="event-text" class="form-control" placeholder="e.g., Physics Lab, Match Day" required>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.8rem; color: var(--text-muted); display:block; margin-bottom:4px;">Date</label>
+                                <input type="date" id="event-date" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn-primary" style="background: var(--purple-note); margin-top: 5px;">
+                                <i class="fa-solid fa-bookmark"></i> Save Event Note
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="stats-view" class="view-section placeholder-page" style="text-align: left;">
+                <div class="view-signature-stamp">Created By Prabal</div>
+                <h2><i class="fa-solid fa-chart-simple" style="color: var(--primary);"></i> Live Academic Performance Statistics</h2>
+                <p style="color: var(--text-muted); margin-bottom: 30px;">Real-time accuracy analytics auto-calculated straight from your homework records.</p>
+                <div id="dynamic-stats-bars-container"></div>
+            </div>
+
+            <div id="timer-view" class="view-section placeholder-page">
+                <div class="view-signature-stamp">Created By Prabal</div>
+                <i class="page-icon fa-solid fa-stopwatch"></i>
+                <h2>Homework Focus Speed Timer</h2>
+                <p style="color: var(--text-muted); text-align: center; margin-bottom: 30px;">Set a custom target time for your study session to maximize focus execution speed.</p>
+                
+                <div class="timer-layout">
+                    <div style="display: flex; gap: 15px; align-items: center; background: var(--input-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--panel-border); width: 100%;">
+                        <label style="font-weight: bold; white-space: nowrap;">Set Target (Minutes):</label>
+                        <input type="number" id="timer-input-minutes" class="form-control" value="25" min="1" max="180" style="text-align: center; font-size: 1.1rem; font-weight: bold; color: #fbbf24;">
+                        <button class="btn-timer start" onclick="initializeCustomCountdown()" style="max-width: 90px; padding: 8px;">Apply</button>
+                    </div>
+
+                    <div class="timer-display-digits" id="countdown-display">25:00</div>
+
+                    <div class="timer-controls">
+                        <button id="btn-timer-start" class="btn-timer start" onclick="startCountdown()"><i class="fa-solid fa-play"></i> Start</button>
+                        <button id="btn-timer-pause" class="btn-timer pause" onclick="pauseCountdown()"><i class="fa-solid fa-pause"></i> Pause</button>
+                        <button class="btn-timer reset" onclick="resetCountdown()"><i class="fa-solid fa-arrow-rotate-left"></i> Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="settings-view" class="view-section placeholder-page" style="text-align: left;">
+                <div class="view-signature-stamp">Created By Prabal</div>
+                <h2><i class="fa-solid fa-gear" style="color: var(--primary);"></i> Application Settings</h2>
+                <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 15px;">
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" style="width: 18px; height: 18px;" checked>
+                        <label style="margin: 0; font-size: 1rem; color: var(--text-main);">Enable Daily Reminders</label>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" style="width: 18px; height: 18px;" checked>
+                        <label style="margin: 0; font-size: 1rem; color: var(--text-main);">Auto-delete tasks after 30 days</label>
+                    </div>
+                    <hr style="border-color: var(--panel-border); margin: 20px 0;">
+                    <button class="btn-primary" style="width: max-content; padding: 10px 20px; background: var(--danger);">Delete All Data</button>
+                </div>
+            </div>
+
+            <div id="about-view" class="view-section placeholder-page">
+                <div class="view-signature-stamp">Created By Prabal</div>
+                <i class="page-icon fa-solid fa-circle-info"></i>
+                <h2>About System</h2>
+                <div style="background: var(--input-bg); padding: 25px; border-radius: 10px; margin: 20px auto; max-width: 600px; border-left: 4px solid var(--primary);">
+                    <p style="font-size: 1.1rem; line-height: 1.6; font-style: italic; color: var(--text-main);">
+                        "No excuses. No missed deadlines. Just complete your missions, level up your grades, and stay ahead."
+                    </p>
+                </div>
+                <div style="margin-top: 30px; text-align: center;">
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">Created on: <strong style="color: var(--text-main);">7/7/2026</strong></p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;">
+                        Created by:<br>
+                        <strong style="color: #fbbf24; font-size: 1.4rem; display: block; margin-bottom: 2px;">Prabal</strong>
+                        <span style="color: var(--text-main); font-size: 1.1rem; font-weight: 600;">Grade 9B</span>
+                    </p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    
+    <footer>
+        Created By Prabal
+        <span>Created on 7/7/2026</span>
+    </footer>
+
+    <script>
+        // --- 1. VIEW SWITCHER ---
+        function switchView(viewId, clickedButton) {
+            document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active-view'));
+            document.getElementById(viewId).classList.add('active-view');
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            clickedButton.classList.add('active');
+        }
+
+        // --- 2. THEME TOGGLE ---
+        const themeToggle = document.getElementById('theme-toggle');
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            if (document.body.classList.contains('light-mode')) {
+                themeToggle.innerHTML = '<i class="fa-solid fa-moon"></i> Dark Mode';
+            } else {
+                themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i> Light Mode';
+            }
+        });
+
+        // --- 3. CUSTOM SETTABLE PROGRESS TIMER ENGINE ---
+        let countdownRunningInterval = null;
+        let timeRemainingSeconds = 25 * 60; 
+
+        function initializeCustomCountdown() {
+            pauseCountdown();
+            const minInput = document.getElementById('timer-input-minutes').value;
+            timeRemainingSeconds = parseInt(minInput) * 60;
+            updateTimerDisplayDigits();
+        }
+
+        function updateTimerDisplayDigits() {
+            const displayObj = document.getElementById('countdown-display');
+            if (timeRemainingSeconds <= 0) {
+                displayObj.innerText = "00:00";
+                displayObj.style.color = "var(--danger)";
+                return;
+            }
+            displayObj.style.color = "#fbbf24";
+            const displayMins = String(Math.floor(timeRemainingSeconds / 60)).padStart(2, '0');
+            const displaySecs = String(timeRemainingSeconds % 60).padStart(2, '0');
+            displayObj.innerText = `${displayMins}:${displaySecs}`;
+        }
+
+        function startCountdown() {
+            if (countdownRunningInterval !== null) return;
+            countdownRunningInterval = setInterval(() => {
+                timeRemainingSeconds--;
+                updateTimerDisplayDigits();
+                if (timeRemainingSeconds <= 0) {
+                    clearInterval(countdownRunningInterval);
+                    countdownRunningInterval = null;
+                }
+            }, 1000);
+        }
+
+        function pauseCountdown() {
+            clearInterval(countdownRunningInterval);
+            countdownRunningInterval = null;
+        }
+
+        function resetCountdown() {
+            initializeCustomCountdown();
+        }
+
+
+        // --- 4. DATA OBJECT REPOSITORIES ---
+        let tasks = [
+            { id: 1, title: "Quantum Physics Equations", subject: "Physics", date: "2026-07-12", priority: "High", completed: false },
+            { id: 2, title: "Chemical Reactions Balanced Lab", subject: "Chemistry", date: "2026-07-13", priority: "Medium", completed: false },
+            { id: 3, title: "Loop Logic Exercises", subject: "Computer", date: "2026-07-10", priority: "High", completed: true },
+            { id: 4, title: "Algebra Set 3", subject: "Mathematics", date: "2026-07-09", priority: "Low", completed: true }
+        ];
+
+        let customEvents = [
+            { id: 1, text: "Physics Lab Assessment", date: "2026-07-15" },
+            { id: 2, text: "Inter-School Football Match", date: "2026-07-22" }
+        ];
+
+        let currentFilter = 'All';
+        let searchQuery = '';
+
+        const taskListContainer = document.getElementById('task-list-container');
+        const archiveListContainer = document.getElementById('archive-list-container');
+        const form = document.getElementById('add-homework-form');
+        const eventForm = document.getElementById('add-event-form');
+        const searchInput = document.getElementById('search-input');
+
+        document.getElementById('input-date').valueAsDate = new Date();
+        document.getElementById('event-date').valueAsDate = new Date();
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newTask = {
+                id: Date.now(),
+                title: document.getElementById('input-title').value.trim(),
+                subject: document.getElementById('input-subject').value.trim(),
+                date: document.getElementById('input-date').value,
+                priority: document.getElementById('input-priority').value,
+                completed: false
+            };
+            tasks.push(newTask);
+            form.reset();
+            document.getElementById('input-date').valueAsDate = new Date();
+            renderTasks();
+        });
+
+        eventForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newEvent = {
+                id: Date.now(),
+                text: document.getElementById('event-text').value.trim(),
+                date: document.getElementById('event-date').value
+            };
+            customEvents.push(newEvent);
+            eventForm.reset();
+            document.getElementById('event-date').valueAsDate = new Date();
+            renderCalendar();
+        });
+
+        searchInput.addEventListener('input', function(e) {
+            searchQuery = e.target.value.toLowerCase();
+            renderTasks();
+        });
+
+        function setFilter(filterType, clickedTab) {
+            currentFilter = filterType;
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            clickedTab.classList.add('active');
+            renderTasks();
+        }
+
+        function toggleTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if(task) {
+                task.completed = !task.completed;
+                renderTasks();
+            }
+        }
+
+        function deleteTask(taskId) {
+            tasks = tasks.filter(t => t.id !== taskId);
+            renderTasks();
+        }
+
+        // --- REAL STATISTICS METRICS GENERATOR ---
+        function updateStatsAndRealAnalytics() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const pending = total - completed;
+            const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            const dueToday = tasks.filter(t => t.date === todayStr && !t.completed).length;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-completed').innerText = completed;
+            document.getElementById('stat-pending').innerText = pending;
+            document.getElementById('stat-today').innerText = dueToday;
+            
+            document.getElementById('stat-progress-bar').style.width = progress + '%';
+            document.getElementById('stat-progress-text').innerText = progress + '%';
+
+            const statsContainer = document.getElementById('dynamic-stats-bars-container');
+            statsContainer.innerHTML = '';
+
+            if (total === 0) {
+                statsContainer.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 30px;">Add tasks to display tracking bars.</p>';
+                return;
+            }
+
+            const subjectData = {};
+            tasks.forEach(t => {
+                const sub = t.subject.charAt(0).toUpperCase() + t.subject.slice(1).toLowerCase();
+                if (!subjectData[sub]) {
+                    subjectData[sub] = { total: 0, completed: 0 };
+                }
+                subjectData[sub].total++;
+                if (t.completed) subjectData[sub].completed++;
+            });
+
+            const colors = ['#3b82f6', '#10b981', '#a855f7', '#f59e0b', '#ef4444', '#84cc16'];
+            let index = 0;
+            for (const [subject, data] of Object.entries(subjectData)) {
+                const percent = Math.round((data.completed / data.total) * 100);
+                const barColor = colors[index % colors.length];
+                
+                const group = document.createElement('div');
+                group.className = 'stat-bar-group';
+                group.innerHTML = `
+                    <p>
+                        <strong>${subject}</strong> 
+                        <span style="color: ${barColor};">${data.completed}/${data.total} Completed (${percent}%)</span>
+                    </p>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: ${percent}%; background: ${barColor};"></div>
+                    </div>
+                `;
+                statsContainer.appendChild(group);
+                index++;
+            }
+        }
+
+        // --- 5. CALENDAR MATRIX ENGINE ---
+        const calMonthSelect = document.getElementById('cal-month-select');
+        const calYearSelect = document.getElementById('cal-year-select');
+        const calendarGridContainer = document.getElementById('calendar-grid-container');
+
+        const monthsList = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        monthsList.forEach((m, idx) => {
+            const opt = document.createElement('option');
+            opt.value = idx;
+            opt.innerText = m;
+            calMonthSelect.appendChild(opt);
+        });
+
+        for (let y = 2026; y <= 2067; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.innerText = y;
+            calYearSelect.appendChild(opt);
+        }
+
+        let selectedCalMonth = new Date().getMonth(); 
+        let selectedCalYear = 2026;
+        calMonthSelect.value = selectedCalMonth;
+        calYearSelect.value = selectedCalYear;
+
+        calMonthSelect.addEventListener('change', () => { selectedCalMonth = parseInt(calMonthSelect.value); renderCalendar(); });
+        calYearSelect.addEventListener('change', () => { selectedCalYear = parseInt(calYearSelect.value); renderCalendar(); });
+
+        function renderCalendar() {
+            calendarGridContainer.innerHTML = '';
+            
+            const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            daysOfWeek.forEach(d => {
+                const head = document.createElement('div');
+                head.className = 'cal-day-header';
+                head.innerText = d;
+                calendarGridContainer.appendChild(head);
+            });
+
+            const firstDayIndex = new Date(selectedCalYear, selectedCalMonth, 1).getDay();
+            const totalDays = new Date(selectedCalYear, selectedCalMonth + 1, 0).getDate();
+            const prevTotalDays = new Date(selectedCalYear, selectedCalMonth, 0).getDate();
+
+            for (let i = firstDayIndex - 1; i >= 0; i--) {
+                const block = document.createElement('div');
+                block.className = 'cal-day';
+                block.style.opacity = '0.25';
+                block.innerText = prevTotalDays - i;
+                calendarGridContainer.appendChild(block);
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const cell = document.createElement('div');
+                cell.className = 'cal-day';
+                
+                const actualToday = new Date();
+                if (actualToday.getDate() === day && actualToday.getMonth() === selectedCalMonth && actualToday.getFullYear() === selectedCalYear) {
+                    cell.classList.add('active');
+                }
+                
+                cell.innerHTML = `<div>${day}</div>`;
+                
+                const ISO_Month = String(selectedCalMonth + 1).padStart(2, '0');
+                const ISO_Day = String(day).padStart(2, '0');
+                const targetMatchString = `${selectedCalYear}-${ISO_Month}-${ISO_Day}`;
+                
+                const matchingTasks = tasks.filter(t => t.date === targetMatchString);
+                matchingTasks.forEach(task => {
+                    const badgeChip = document.createElement('div');
+                    badgeChip.className = 'cal-event';
+                    if (task.completed) {
+                        badgeChip.style.background = 'var(--success)';
+                        badgeChip.style.textDecoration = 'line-through';
+                    } else {
+                        badgeChip.style.background = `var(--${task.priority})`;
+                    }
+                    badgeChip.innerText = `📚 ${task.title}`;
+                    cell.appendChild(badgeChip);
+                });
+
+                const matchingEvents = customEvents.filter(e => e.date === targetMatchString);
+                matchingEvents.forEach(evt => {
+                    const eventChip = document.createElement('div');
+                    eventChip.className = 'cal-event custom-note-badge';
+                    eventChip.innerText = `📌 ${evt.text}`;
+                    cell.appendChild(eventChip);
+                });
+
+                calendarGridContainer.appendChild(cell);
+            }
+        }
+
+        // --- 6. MASTER RENDER CONTROLLER ---
+        function renderTasks() {
+            taskListContainer.innerHTML = '';
+            archiveListContainer.innerHTML = '';
+
+            let filteredTasks = tasks.filter(task => 
+                task.title.toLowerCase().includes(searchQuery) || 
+                task.subject.toLowerCase().includes(searchQuery)
+            );
+
+            if (currentFilter === 'Pending') {
+                filteredTasks = filteredTasks.filter(task => !task.completed);
+            } else if (currentFilter === 'Completed') {
+                filteredTasks = filteredTasks.filter(task => task.completed);
+            }
+
+            if (filteredTasks.length === 0) {
+                taskListContainer.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 20px;">No homework found.</p>';
+            }
+
+            tasks.forEach(task => {
+                const dateObj = new Date(task.date);
+                const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const archiveItem = document.createElement('div');
+                archiveItem.className = `task-item ${task.completed ? 'completed-task' : ''}`;
+                archiveItem.innerHTML = `
+                    <div class="task-info">
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-subject">${task.subject}</div>
+                    </div>
+                    <div class="task-date"><i class="fa-regular fa-calendar"></i> ${dateString}</div>
+                    <div class="badge ${task.priority}">${task.priority}</div>
+                `;
+                archiveListContainer.appendChild(archiveItem);
+            });
+
+            filteredTasks.forEach(task => {
+                const taskDiv = document.createElement('div');
+                taskDiv.className = `task-item ${task.completed ? 'completed-task' : ''}`;
+                const dateObj = new Date(task.date);
+                const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+                taskDiv.innerHTML = `
+                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
+                    <div class="task-info">
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-subject">${task.subject}</div>
+                    </div>
+                    <div class="task-date"><i class="fa-regular fa-calendar"></i> ${dateString}</div>
+                    <div class="badge ${task.priority}">${task.priority}</div>
+                    <div class="task-actions">
+                        <button class="action-btn delete" onclick="deleteTask(${task.id})"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                `;
+                taskListContainer.appendChild(taskDiv);
+            });
+            
+            updateStatsAndRealAnalytics();
+            renderCalendar();
+        }
+
+        renderTasks();
+    </script>
+</body>
+</html>
+
+```
